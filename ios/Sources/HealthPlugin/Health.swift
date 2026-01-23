@@ -171,7 +171,8 @@ enum HealthDataType: String, CaseIterable {
         case .weight:
             identifier = .bodyMass
         case .sleep:
-            throw HealthManagerError.dataTypeUnavailable("Sleep data is not available as sample type")
+            throw HealthManagerError.dataTypeUnavailable(
+                "Sleep data is not available as sample type. Use categoryType()")
         }
         guard let type = HKObjectType.quantityType(forIdentifier: identifier) else {
             throw HealthManagerError.dataTypeUnavailable(rawValue)
@@ -187,7 +188,8 @@ enum HealthDataType: String, CaseIterable {
             }
             return type
         default:
-            throw HealthManagerError.dataTypeUnavailable("Only sleep data is supported as category type")
+            throw HealthManagerError.dataTypeUnavailable(
+                "Only sleep data is supported as category type.  Use sampleType()")
         }
     }
 
@@ -224,6 +226,7 @@ enum HealthDataType: String, CaseIterable {
             return "minute"
         }
     }
+
     var typeType: String {
         switch self {
         case .sleep:
@@ -235,9 +238,7 @@ enum HealthDataType: String, CaseIterable {
 
     static func parseMany(_ identifiers: [String]) throws -> [HealthDataType] {
         try identifiers.map { identifier in
-            print("Checking identifier with \(identifier)")
             guard let type: HealthDataType = HealthDataType(rawValue: identifier) else {
-                print("The \(identifier) is invalid.")
                 throw HealthManagerError.invalidDataType(identifier)
             }
             return type
@@ -292,7 +293,6 @@ final class Health {
             completion(.failure(HealthManagerError.healthDataUnavailable))
             return
         }
-        print("Requesting authorization with \(readIdentifiers)")
 
         do {
             let readTypes = try HealthDataType.parseMany(readIdentifiers)
@@ -323,7 +323,6 @@ final class Health {
     }
 
     func checkAuthorization(readIdentifiers: [String], writeIdentifiers: [String], completion: @escaping (Result<AuthorizationStatusPayload, Error>) -> Void) {
-        print("Requesting check Authorisation with \(readIdentifiers)")
 
         do {
             let readTypes = try HealthDataType.parseMany(readIdentifiers)
@@ -563,7 +562,6 @@ final class Health {
         var set = Set<HKObjectType>()
         set.insert(HKCategoryType.activitySummaryType())
         for dataType in dataTypes {
-            print("The data type is \(dataType.rawValue) \(dataType.typeType)")
             if dataType.typeType == "category" {
                 let type: HKCategoryType = try dataType.categoryType()
                 set.insert(type)
@@ -596,8 +594,6 @@ final class Health {
     ) {
         let startDate = (try? parseDate(startDateString, defaultValue: Date()))!
         let endDate = (try? parseDate(endDateString, defaultValue: Date()))!
-
-        print("Querying sleeps with: \(startDate), \(endDate)")
 
         guard endDate >= startDate else {
             completion(.failure(HealthManagerError.invalidDateRange))
@@ -642,7 +638,6 @@ final class Health {
             }
             completion(.success([]))
         }
-
         healthStore.execute(query)
     }
 
