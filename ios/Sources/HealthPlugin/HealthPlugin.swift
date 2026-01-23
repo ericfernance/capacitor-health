@@ -15,7 +15,8 @@ public class HealthPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "getPluginVersion", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openHealthConnectSettings", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "showPrivacyPolicy", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "queryWorkouts", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "queryWorkouts", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "querySleeps", returnType: CAPPluginReturnPromise)
     ]
 
     private let implementation = Health()
@@ -165,6 +166,29 @@ public class HealthPlugin: CAPPlugin, CAPBridgedPlugin {
                 switch result {
                 case let .success(workouts):
                     call.resolve(["workouts": workouts])
+                case let .failure(error):
+                    call.reject(error.localizedDescription, nil, error)
+                }
+            }
+        }
+    }
+
+    @objc func querySleeps(_ call: CAPPluginCall) {
+        let startDate = call.getString("startDate")
+        let endDate = call.getString("endDate")
+        let limit = call.getInt("limit")
+        let ascending = call.getBool("ascending") ?? false
+
+        implementation.querySleeps(
+            startDateString: startDate,
+            endDateString: endDate,
+            limit: limit,
+            ascending: ascending
+        ) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case let .success(sleeps):
+                    call.resolve(["sleeps": sleeps])
                 case let .failure(error):
                     call.reject(error.localizedDescription, nil, error)
                 }

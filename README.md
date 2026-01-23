@@ -164,6 +164,7 @@ All write operations expect the default unit shown above. On Android the `metada
 * [`openHealthConnectSettings()`](#openhealthconnectsettings)
 * [`showPrivacyPolicy()`](#showprivacypolicy)
 * [`queryWorkouts(...)`](#queryworkouts)
+* [`querySleeps(...)`](#querysleeps)
 * [Interfaces](#interfaces)
 * [Type Aliases](#type-aliases)
 
@@ -316,6 +317,21 @@ Supported on iOS (HealthKit) and Android (Health Connect).
 --------------------
 
 
+### querySleeps(...)
+
+```typescript
+querySleeps(options: QuerySleepOptions) => Promise<any>
+```
+
+| Param         | Type                                                            |
+| ------------- | --------------------------------------------------------------- |
+| **`options`** | <code><a href="#querysleepoptions">QuerySleepOptions</a></code> |
+
+**Returns:** <code>Promise&lt;any&gt;</code>
+
+--------------------
+
+
 ### Interfaces
 
 
@@ -422,12 +438,32 @@ Supported on iOS (HealthKit) and Android (Health Connect).
 | **`ascending`**   | <code>boolean</code>                                | Return results sorted ascending by start date (defaults to false).        |
 
 
+#### QuerySleepOptions
+
+| Prop            | Type                 |
+| --------------- | -------------------- |
+| **`startDate`** | <code>string</code>  |
+| **`endDate`**   | <code>string</code>  |
+| **`limit`**     | <code>number</code>  |
+| **`ascending`** | <code>boolean</code> |
+
+
 ### Type Aliases
 
 
 #### HealthDataType
 
+<code><a href="#healthquantitytype">HealthQuantityType</a> | <a href="#healthcategorytype">HealthCategoryType</a></code>
+
+
+#### HealthQuantityType
+
 <code>'steps' | 'distance' | 'calories' | 'heartRate' | 'weight'</code>
+
+
+#### HealthCategoryType
+
+<code>'sleep'</code>
 
 
 #### HealthUnit

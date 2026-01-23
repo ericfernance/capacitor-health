@@ -155,6 +155,7 @@ enum HealthDataType: String, CaseIterable {
     case calories
     case heartRate
     case weight
+    case sleep
 
     func sampleType() throws -> HKQuantityType {
         let identifier: HKQuantityTypeIdentifier
@@ -169,12 +170,25 @@ enum HealthDataType: String, CaseIterable {
             identifier = .heartRate
         case .weight:
             identifier = .bodyMass
+        case .sleep:
+            throw HealthManagerError.dataTypeUnavailable("Sleep data is not available as sample type")
         }
-
         guard let type = HKObjectType.quantityType(forIdentifier: identifier) else {
             throw HealthManagerError.dataTypeUnavailable(rawValue)
         }
         return type
+    }
+
+    func categoryType() throws -> HKCategoryType {
+        switch self {
+        case .sleep:
+            guard let type = HKCategoryType.categoryType(forIdentifier: .sleepAnalysis) else {
+                throw HealthManagerError.dataTypeUnavailable(rawValue)
+            }
+            return type
+        default:
+            throw HealthManagerError.dataTypeUnavailable("Only sleep data is supported as category type")
+        }
     }
 
     var defaultUnit: HKUnit {
@@ -189,6 +203,8 @@ enum HealthDataType: String, CaseIterable {
             return HKUnit.count().unitDivided(by: HKUnit.minute())
         case .weight:
             return HKUnit.gramUnit(with: .kilo)
+        case .sleep:
+            return HKUnit.minute()
         }
     }
 
@@ -204,12 +220,24 @@ enum HealthDataType: String, CaseIterable {
             return "bpm"
         case .weight:
             return "kilogram"
+        case .sleep:
+            return "minute"
+        }
+    }
+    var typeType: String {
+        switch self {
+        case .sleep:
+            return "category"
+        default:
+            return "quantity"
         }
     }
 
     static func parseMany(_ identifiers: [String]) throws -> [HealthDataType] {
         try identifiers.map { identifier in
-            guard let type = HealthDataType(rawValue: identifier) else {
+            print("Checking identifier with \(identifier)")
+            guard let type: HealthDataType = HealthDataType(rawValue: identifier) else {
+                print("The \(identifier) is invalid.")
                 throw HealthManagerError.invalidDataType(identifier)
             }
             return type
@@ -264,6 +292,7 @@ final class Health {
             completion(.failure(HealthManagerError.healthDataUnavailable))
             return
         }
+        print("Requesting authorization with \(readIdentifiers)")
 
         do {
             let readTypes = try HealthDataType.parseMany(readIdentifiers)
@@ -294,6 +323,8 @@ final class Health {
     }
 
     func checkAuthorization(readIdentifiers: [String], writeIdentifiers: [String], completion: @escaping (Result<AuthorizationStatusPayload, Error>) -> Void) {
+        print("Requesting check Authorisation with \(readIdentifiers)")
+
         do {
             let readTypes = try HealthDataType.parseMany(readIdentifiers)
             let writeTypes = try HealthDataType.parseMany(writeIdentifiers)
@@ -447,9 +478,19 @@ final class Health {
         var denied: [HealthDataType] = []
 
         for type in types {
-            guard let objectType = try? type.sampleType() else {
-                denied.append(type)
-                continue
+            var objectType: HKObjectType
+            if type.typeType == "category" {
+                guard let categoryType = try? type.categoryType() else {
+                    denied.append(type)
+                    continue
+                }
+                objectType = categoryType as HKObjectType
+            } else {
+                guard let sampleType = try? type.sampleType() else {
+                    denied.append(type)
+                    continue
+                }
+                objectType = sampleType as HKObjectType
             }
 
             group.enter()
@@ -520,9 +561,17 @@ final class Health {
 
     private func objectTypes(for dataTypes: [HealthDataType]) throws -> Set<HKObjectType> {
         var set = Set<HKObjectType>()
+        set.insert(HKCategoryType.activitySummaryType())
         for dataType in dataTypes {
-            let type = try dataType.sampleType()
-            set.insert(type)
+            print("The data type is \(dataType.rawValue) \(dataType.typeType)")
+            if dataType.typeType == "category" {
+                let type: HKCategoryType = try dataType.categoryType()
+                set.insert(type)
+            }
+            if dataType.typeType == "quantity" {
+                let type = try dataType.sampleType()
+                set.insert(type)
+            }
         }
         // Always include workout type for read access to enable workout queries
         set.insert(HKObjectType.workoutType())
@@ -536,6 +585,65 @@ final class Health {
             set.insert(type)
         }
         return set
+    }
+
+    func querySleeps(
+        startDateString: String?,
+        endDateString: String?,
+        limit: Int?,
+        ascending: Bool,
+        completion: @escaping (Result<[[String: Any]], Error>) -> Void
+    ) {
+        let startDate = (try? parseDate(startDateString, defaultValue: Date()))!
+        let endDate = (try? parseDate(endDateString, defaultValue: Date()))!
+
+        print("Querying sleeps with: \(startDate), \(endDate)")
+
+        guard endDate >= startDate else {
+            completion(.failure(HealthManagerError.invalidDateRange))
+            return
+        }
+
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
+            completion(.failure(HealthManagerError.operationFailed("Sleep type is not available")))
+            return
+        }
+
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: [])
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: ascending)
+
+        let queryLimit = limit ?? HKObjectQueryNoLimit
+
+        let query = HKSampleQuery(
+            sampleType: sleepType,
+            predicate: predicate,
+            limit: queryLimit,
+            sortDescriptors: [sortDescriptor]
+        ) { [weak self] _, samples, error in
+            guard let self else { return }
+
+            if let error {
+                completion(.failure(error))
+                return
+            }
+
+            let categorySamples = (samples as? [HKCategorySample]) ?? []
+            for sample in categorySamples {
+                let value: HKCategoryValueSleepAnalysis? =
+                    HKCategoryValueSleepAnalysis(rawValue: sample.value)
+                print("""
+                      ----
+                      \(value.map { "\($0)" } ?? "unknown")
+                      start: \(sample.startDate)
+                      end:   \(sample.endDate)
+                      source: \(sample.sourceRevision.source.name)
+                      device: \(sample.device?.name ?? "n/a")
+                      """)
+            }
+            completion(.success([]))
+        }
+
+        healthStore.execute(query)
     }
 
     func queryWorkouts(workoutTypeString: String?, startDateString: String?, endDateString: String?, limit: Int?, ascending: Bool, completion: @escaping (Result<[[String: Any]], Error>) -> Void) {

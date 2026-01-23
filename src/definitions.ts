@@ -1,6 +1,7 @@
-export type HealthDataType = 'steps' | 'distance' | 'calories' | 'heartRate' | 'weight';
-
+export type HealthQuantityType = 'steps' | 'distance' | 'calories' | 'heartRate' | 'weight';
+export type HealthCategoryType = 'sleep';
 export type HealthUnit = 'count' | 'meter' | 'kilocalorie' | 'bpm' | 'kilogram';
+export type HealthDataType = HealthQuantityType | HealthCategoryType;
 
 export interface AuthorizationOptions {
   /** Data types that should be readable after authorization. */
@@ -84,6 +85,12 @@ export interface QueryWorkoutsOptions {
   /** Maximum number of workouts to return (defaults to 100). */
   limit?: number;
   /** Return results sorted ascending by start date (defaults to false). */
+  ascending?: boolean;
+}
+export interface QuerySleepOptions {
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
   ascending?: boolean;
 }
 
@@ -183,4 +190,5 @@ export interface HealthPlugin {
    * @throws An error if something went wrong
    */
   queryWorkouts(options: QueryWorkoutsOptions): Promise<QueryWorkoutsResult>;
+  querySleeps(options: QuerySleepOptions): Promise<any>;
 }

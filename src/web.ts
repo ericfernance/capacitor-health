@@ -10,6 +10,7 @@ import type {
   QueryWorkoutsResult,
   ReadSamplesResult,
   WriteSampleOptions,
+  QuerySleepOptions,
 } from './definitions';
 
 export class HealthWeb extends WebPlugin implements HealthPlugin {
@@ -50,6 +51,10 @@ export class HealthWeb extends WebPlugin implements HealthPlugin {
   }
 
   async queryWorkouts(_options: QueryWorkoutsOptions): Promise<QueryWorkoutsResult> {
+    throw this.unimplemented('Querying workouts is only available on native platforms.');
+  }
+
+  async querySleeps(_options: QuerySleepOptions): Promise<any> {
     throw this.unimplemented('Querying workouts is only available on native platforms.');
   }
 }
