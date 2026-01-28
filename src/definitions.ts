@@ -51,72 +51,11 @@ export interface ReadSamplesResult {
   samples: HealthSample[];
 }
 
-export type WorkoutType =
-  | 'running'
-  | 'cycling'
-  | 'walking'
-  | 'swimming'
-  | 'yoga'
-  | 'strengthTraining'
-  | 'hiking'
-  | 'tennis'
-  | 'basketball'
-  | 'soccer'
-  | 'americanFootball'
-  | 'baseball'
-  | 'crossTraining'
-  | 'elliptical'
-  | 'rowing'
-  | 'stairClimbing'
-  | 'traditionalStrengthTraining'
-  | 'waterFitness'
-  | 'waterPolo'
-  | 'waterSports'
-  | 'wrestling'
-  | 'other';
-
-export interface QueryWorkoutsOptions {
-  /** Optional workout type filter. If omitted, all workout types are returned. */
-  workoutType?: WorkoutType;
-  /** Inclusive ISO 8601 start date (defaults to now - 1 day). */
-  startDate?: string;
-  /** Exclusive ISO 8601 end date (defaults to now). */
-  endDate?: string;
-  /** Maximum number of workouts to return (defaults to 100). */
-  limit?: number;
-  /** Return results sorted ascending by start date (defaults to false). */
-  ascending?: boolean;
-}
 export interface QuerySleepOptions {
   startDate?: string;
   endDate?: string;
   limit?: number;
   ascending?: boolean;
-}
-
-export interface Workout {
-  /** The type of workout. */
-  workoutType: WorkoutType;
-  /** Duration of the workout in seconds. */
-  duration: number;
-  /** Total energy burned in kilocalories (if available). */
-  totalEnergyBurned?: number;
-  /** Total distance in meters (if available). */
-  totalDistance?: number;
-  /** ISO 8601 start date of the workout. */
-  startDate: string;
-  /** ISO 8601 end date of the workout. */
-  endDate: string;
-  /** Source name that recorded the workout. */
-  sourceName?: string;
-  /** Source bundle identifier. */
-  sourceId?: string;
-  /** Additional metadata (if available). */
-  metadata?: Record<string, string>;
-}
-
-export interface QueryWorkoutsResult {
-  workouts: Workout[];
 }
 
 export interface WriteSampleOptions {
@@ -189,6 +128,5 @@ export interface HealthPlugin {
    * @returns A promise that resolves with the workout sessions
    * @throws An error if something went wrong
    */
-  queryWorkouts(options: QueryWorkoutsOptions): Promise<QueryWorkoutsResult>;
   querySleeps(options: QuerySleepOptions): Promise<any>;
 }

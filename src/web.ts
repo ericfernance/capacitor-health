@@ -6,8 +6,6 @@ import type {
   AvailabilityResult,
   HealthPlugin,
   QueryOptions,
-  QueryWorkoutsOptions,
-  QueryWorkoutsResult,
   ReadSamplesResult,
   WriteSampleOptions,
   QuerySleepOptions,
@@ -50,11 +48,7 @@ export class HealthWeb extends WebPlugin implements HealthPlugin {
     // No-op on web - Health Connect privacy policy is Android only
   }
 
-  async queryWorkouts(_options: QueryWorkoutsOptions): Promise<QueryWorkoutsResult> {
-    throw this.unimplemented('Querying workouts is only available on native platforms.');
-  }
-
   async querySleeps(_options: QuerySleepOptions): Promise<any> {
-    throw this.unimplemented('Querying workouts is only available on native platforms.');
+    throw this.unimplemented('Querying sleeps is only available on native platforms.');
   }
 }

@@ -163,7 +163,6 @@ All write operations expect the default unit shown above. On Android the `metada
 * [`getPluginVersion()`](#getpluginversion)
 * [`openHealthConnectSettings()`](#openhealthconnectsettings)
 * [`showPrivacyPolicy()`](#showprivacypolicy)
-* [`queryWorkouts(...)`](#queryworkouts)
 * [`querySleeps(...)`](#querysleeps)
 * [Interfaces](#interfaces)
 * [Type Aliases](#type-aliases)
@@ -299,33 +298,18 @@ or by placing an HTML file at www/privacypolicy.html in your assets.
 --------------------
 
 
-### queryWorkouts(...)
-
-```typescript
-queryWorkouts(options: QueryWorkoutsOptions) => Promise<QueryWorkoutsResult>
-```
-
-Queries workout sessions from the native health store.
-Supported on iOS (HealthKit) and Android (Health Connect).
-
-| Param         | Type                                                                  | Description                                                                             |
-| ------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| **`options`** | <code><a href="#queryworkoutsoptions">QueryWorkoutsOptions</a></code> | Query options including optional workout type filter, date range, limit, and sort order |
-
-**Returns:** <code>Promise&lt;<a href="#queryworkoutsresult">QueryWorkoutsResult</a>&gt;</code>
-
---------------------
-
-
 ### querySleeps(...)
 
 ```typescript
 querySleeps(options: QuerySleepOptions) => Promise<any>
 ```
 
-| Param         | Type                                                            |
-| ------------- | --------------------------------------------------------------- |
-| **`options`** | <code><a href="#querysleepoptions">QuerySleepOptions</a></code> |
+Queries workout sessions from the native health store.
+Supported on iOS (HealthKit) and Android (Health Connect).
+
+| Param         | Type                                                            | Description                                                                             |
+| ------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#querysleepoptions">QuerySleepOptions</a></code> | Query options including optional workout type filter, date range, limit, and sort order |
 
 **Returns:** <code>Promise&lt;any&gt;</code>
 
@@ -405,39 +389,6 @@ querySleeps(options: QuerySleepOptions) => Promise<any>
 | **`metadata`**  | <code><a href="#record">Record</a>&lt;string, string&gt;</code> | Metadata key-value pairs forwarded to the native APIs where supported.                                                                                                                            |
 
 
-#### QueryWorkoutsResult
-
-| Prop           | Type                   |
-| -------------- | ---------------------- |
-| **`workouts`** | <code>Workout[]</code> |
-
-
-#### Workout
-
-| Prop                    | Type                                                            | Description                                         |
-| ----------------------- | --------------------------------------------------------------- | --------------------------------------------------- |
-| **`workoutType`**       | <code><a href="#workouttype">WorkoutType</a></code>             | The type of workout.                                |
-| **`duration`**          | <code>number</code>                                             | Duration of the workout in seconds.                 |
-| **`totalEnergyBurned`** | <code>number</code>                                             | Total energy burned in kilocalories (if available). |
-| **`totalDistance`**     | <code>number</code>                                             | Total distance in meters (if available).            |
-| **`startDate`**         | <code>string</code>                                             | ISO 8601 start date of the workout.                 |
-| **`endDate`**           | <code>string</code>                                             | ISO 8601 end date of the workout.                   |
-| **`sourceName`**        | <code>string</code>                                             | Source name that recorded the workout.              |
-| **`sourceId`**          | <code>string</code>                                             | Source bundle identifier.                           |
-| **`metadata`**          | <code><a href="#record">Record</a>&lt;string, string&gt;</code> | Additional metadata (if available).                 |
-
-
-#### QueryWorkoutsOptions
-
-| Prop              | Type                                                | Description                                                               |
-| ----------------- | --------------------------------------------------- | ------------------------------------------------------------------------- |
-| **`workoutType`** | <code><a href="#workouttype">WorkoutType</a></code> | Optional workout type filter. If omitted, all workout types are returned. |
-| **`startDate`**   | <code>string</code>                                 | Inclusive ISO 8601 start date (defaults to now - 1 day).                  |
-| **`endDate`**     | <code>string</code>                                 | Exclusive ISO 8601 end date (defaults to now).                            |
-| **`limit`**       | <code>number</code>                                 | Maximum number of workouts to return (defaults to 100).                   |
-| **`ascending`**   | <code>boolean</code>                                | Return results sorted ascending by start date (defaults to false).        |
-
-
 #### QuerySleepOptions
 
 | Prop            | Type                 |
@@ -476,11 +427,6 @@ querySleeps(options: QuerySleepOptions) => Promise<any>
 Construct a type with a set of properties K of type T
 
 <code>{ [P in K]: T; }</code>
-
-
-#### WorkoutType
-
-<code>'running' | 'cycling' | 'walking' | 'swimming' | 'yoga' | 'strengthTraining' | 'hiking' | 'tennis' | 'basketball' | 'soccer' | 'americanFootball' | 'baseball' | 'crossTraining' | 'elliptical' | 'rowing' | 'stairClimbing' | 'traditionalStrengthTraining' | 'waterFitness' | 'waterPolo' | 'waterSports' | 'wrestling' | 'other'</code>
 
 </docgen-api>
 

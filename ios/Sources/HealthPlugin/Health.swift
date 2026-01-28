@@ -571,8 +571,6 @@ final class Health {
                 set.insert(type)
             }
         }
-        // Always include workout type for read access to enable workout queries
-        set.insert(HKObjectType.workoutType())
         return set
     }
 
@@ -624,108 +622,22 @@ final class Health {
             }
 
             let categorySamples = (samples as? [HKCategorySample]) ?? []
+            var parsedSamples: [[String: Any]] = []
             for sample in categorySamples {
                 let value: HKCategoryValueSleepAnalysis? =
                     HKCategoryValueSleepAnalysis(rawValue: sample.value)
-                print("""
-                      ----
-                      \(value.map { "\($0)" } ?? "unknown")
-                      start: \(sample.startDate)
-                      end:   \(sample.endDate)
-                      source: \(sample.sourceRevision.source.name)
-                      device: \(sample.device?.name ?? "n/a")
-                      """)
+                let source = sample.sourceRevision.source
+                parsedSamples.append([
+                    "startDate": sample.startDate,
+                    "endDate": sample.endDate,
+                    "sourceName": source.name,
+                    "sourceId": source.bundleIdentifier,
+                    "dataType": "sleep",
+                    "value": value?.rawValue ?? 0
+                ])
             }
-            completion(.success([]))
+            completion(.success(parsedSamples))
         }
-        healthStore.execute(query)
-    }
-
-    func queryWorkouts(workoutTypeString: String?, startDateString: String?, endDateString: String?, limit: Int?, ascending: Bool, completion: @escaping (Result<[[String: Any]], Error>) -> Void) {
-        let startDate = (try? parseDate(startDateString, defaultValue: Date().addingTimeInterval(-86400))) ?? Date().addingTimeInterval(-86400)
-        let endDate = (try? parseDate(endDateString, defaultValue: Date())) ?? Date()
-
-        guard endDate >= startDate else {
-            completion(.failure(HealthManagerError.invalidDateRange))
-            return
-        }
-
-        var predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: [])
-
-        // Filter by workout type if specified
-        if let workoutTypeString = workoutTypeString, let workoutType = WorkoutType(rawValue: workoutTypeString) {
-            let hkWorkoutType = workoutType.hkWorkoutActivityType()
-            let typePredicate = HKQuery.predicateForWorkouts(with: hkWorkoutType)
-            predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [predicate, typePredicate])
-        }
-
-        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: ascending)
-        let queryLimit = limit ?? 100
-
-        guard let workoutSampleType = HKObjectType.workoutType() as? HKSampleType else {
-            completion(.failure(HealthManagerError.operationFailed("Workout type is not available.")))
-            return
-        }
-
-        let query = HKSampleQuery(sampleType: workoutSampleType, predicate: predicate, limit: queryLimit, sortDescriptors: [sortDescriptor]) { [weak self] _, samples, error in
-            guard let self = self else { return }
-
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-
-            guard let workouts = samples as? [HKWorkout] else {
-                completion(.success([]))
-                return
-            }
-
-            let results = workouts.map { workout -> [String: Any] in
-                var payload: [String: Any] = [
-                    "workoutType": WorkoutType.fromHKWorkoutActivityType(workout.workoutActivityType).rawValue,
-                    "duration": Int(workout.duration),
-                    "startDate": self.isoFormatter.string(from: workout.startDate),
-                    "endDate": self.isoFormatter.string(from: workout.endDate)
-                ]
-
-                // Add total energy burned if available
-                if let totalEnergyBurned = workout.totalEnergyBurned {
-                    let energyInKilocalories = totalEnergyBurned.doubleValue(for: HKUnit.kilocalorie())
-                    payload["totalEnergyBurned"] = energyInKilocalories
-                }
-
-                // Add total distance if available
-                if let totalDistance = workout.totalDistance {
-                    let distanceInMeters = totalDistance.doubleValue(for: HKUnit.meter())
-                    payload["totalDistance"] = distanceInMeters
-                }
-
-                // Add source information
-                let source = workout.sourceRevision.source
-                payload["sourceName"] = source.name
-                payload["sourceId"] = source.bundleIdentifier
-
-                // Add metadata if available
-                if let metadata = workout.metadata, !metadata.isEmpty {
-                    var metadataDict: [String: String] = [:]
-                    for (key, value) in metadata {
-                        if let stringValue = value as? String {
-                            metadataDict[key] = stringValue
-                        } else if let numberValue = value as? NSNumber {
-                            metadataDict[key] = numberValue.stringValue
-                        }
-                    }
-                    if !metadataDict.isEmpty {
-                        payload["metadata"] = metadataDict
-                    }
-                }
-
-                return payload
-            }
-
-            completion(.success(results))
-        }
-
         healthStore.execute(query)
     }
 }

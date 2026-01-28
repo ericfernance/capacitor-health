@@ -15,7 +15,6 @@ public class HealthPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "getPluginVersion", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openHealthConnectSettings", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "showPrivacyPolicy", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "queryWorkouts", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "querySleeps", returnType: CAPPluginReturnPromise)
     ]
 
@@ -146,31 +145,6 @@ public class HealthPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func showPrivacyPolicy(_ call: CAPPluginCall) {
         // No-op on iOS - Health Connect privacy policy is Android only
         call.resolve()
-    }
-
-    @objc func queryWorkouts(_ call: CAPPluginCall) {
-        let workoutType = call.getString("workoutType")
-        let startDate = call.getString("startDate")
-        let endDate = call.getString("endDate")
-        let limit = call.getInt("limit")
-        let ascending = call.getBool("ascending") ?? false
-
-        implementation.queryWorkouts(
-            workoutTypeString: workoutType,
-            startDateString: startDate,
-            endDateString: endDate,
-            limit: limit,
-            ascending: ascending
-        ) { result in
-            DispatchQueue.main.async {
-                switch result {
-                case let .success(workouts):
-                    call.resolve(["workouts": workouts])
-                case let .failure(error):
-                    call.reject(error.localizedDescription, nil, error)
-                }
-            }
-        }
     }
 
     @objc func querySleeps(_ call: CAPPluginCall) {
